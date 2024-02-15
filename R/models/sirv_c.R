@@ -58,12 +58,16 @@ parameters <- list(
 #                      DEFINE MODEL OUTPUT FUNCTION
 # ========================================================================== #
 modelOutput <- function(uiInputParameters) {
+  # model_notify("Checking inputs...")
   req(
-    uiInputParameters$demo_pop,
-    uiInputParameters$demo_p_vacc_loop,
+    uiInputParameters$pop_demo,
+    uiInputParameters$loop_p_vacc_demo,
     uiInputParameters$model_beta,
-    uiInputParameters$model_gamma
+    uiInputParameters$model_gamma,
+    uiInputParameters$time_params # the currently selected timeframe
   )
+  
+  # model_notify("Define model...")
   # THE MODEL
   model_SIRVc <- function(time, state, parameters) {
     with(as.list(c(state, parameters)), { # tell R to unpack variable names from the state and parameters inputs
@@ -89,19 +93,12 @@ modelOutput <- function(uiInputParameters) {
   # OBTAIN PARAMETERS FROM INPUT WIDGETS
 
   # DEMOGRAPHIC VALUES:
-  pop <- uiInputParameters$demo_pop
-  p_vacc <- uiInputParameters$demo_p_vacc_loop
+  pop <- uiInputParameters$pop_demo
+  p_vacc <- uiInputParameters$loop_p_vacc_demo
 
   # MODEL VALUES:
   beta <- uiInputParameters$model_beta # the infection rate, which acts on susceptibles per year
   gamma <- uiInputParameters$model_gamma
-
-  # TIME MEASURE
-  time_measure <- uiInputParameters$time_unit_id
-  to <- ifelse(time_measure == "days",
-    uiInputParameters$days_id[[1]],
-    uiInputParameters$years_id[[1]]
-  )
 
   # MODEL PARAMS
   modelParams <- c(beta = beta, gamma = gamma)
@@ -114,24 +111,15 @@ modelOutput <- function(uiInputParameters) {
     R = 0,
     V = p_vacc * pop
   )
-  # })
 
   # TIMESTEPS
-  if (time_measure == "days") {
-    times <- seq(
-      from = 0,
-      to = to,
-      by = 1
-    )
-  } else {
-    times <- seq(
-      from = 0,
-      to = to,
-      by = 10 / 365
-    )
-  }
-
-
+  timeframe <- uiInputParameters$time_params
+  times <- switch(timeframe,
+    "days" = seq(from = 0, to = uiInputParameters$input_days[[1]], by = 1),
+    "years" = seq(from = 0, to = uiInputParameters$input_years[[1]], by = 10 / 365)
+  )
+  
+  # model_notify("Solving differential equations...")
   # MODEL OUTPUTS (solving the differential equations using the ode integration algorithm):
   output <- as.data.frame(ode(
     y = initial_state_values,
@@ -143,6 +131,17 @@ modelOutput <- function(uiInputParameters) {
   output_long <- reshape2::melt(as.data.frame(output), id = "time")
 
   output_long$proportion <- output_long$value / sum(initial_state_values)
-
+  # model_notify("Computing model output...")
   return(list(df = output, df_long = output_long))
 }
+
+
+################# Resume here: To convert model params
+modelParams <- c("model_gamma", "model_beta")
+
+convertModelparams <- function(uiInputParameters){
+  s$timeframe_id
+  req(paste(uiInputParameters, modelParams, sep='$'))
+}
+
+

@@ -1,14 +1,13 @@
 source("global.R")
 
-
-# SERVER============
+# ===============================
+# SERVER
+# ===============================
 server <- function(input, output, session) {
-  model_notify()
   model_path <- reactive({
-    req(input$model_id)
-    # Waiter$new(id="modelPlot1", html=spin_ripple())$show()
-    model_notify() # generate notifications for user 
-    path_to_specific_model(input$model_id)
+    # input$tab_model_params is the currently selected or active model from the list of models
+    req(input$tab_model_params)
+    path_to_specific_model(input$tab_model_params)
   })
 
   # Create model path environment: This will prevent global namespace overloading
@@ -18,60 +17,117 @@ server <- function(input, output, session) {
     env
   })
 
-  # Define sources of reactive dependencies: input$simulate, and input$*_loop if exist
-  current_state <- reactive({
-    input_IDs <- names(input)
-    looping_param <- input_IDs[grep("_loop$", input_IDs)]
-    ifelse(length(looping_param),
-      list(input$simulate_id, input$model_id, input[[looping_param]]),
-      list(input$simulate_id, input$model_id)
-    )
+  # Get looping sliderInput IDs. It is a reactive object
+  # looping_sliders <- get_specific_inputs("loop")
+  looping_sliders <- reactive({
+    all_inputs_names <- names(input)
+    all_inputs_names[grep("^loop", all_inputs_names)]
   })
+
+  # <- reactive({
+  #   all_inputs <- names(input)
+  #   # get looping sliders if present
+  #   loopers <- all_inputs[grep("^loop", all_inputs)]
+  #   return(loopers)
+  # })
+
+
+  # Define sources of reactive dependencies
+  # ie ==> input$simulate, input$tab_model_params,and input$loop_* if exist
+  current_state <- reactive({
+    if (length(looping_sliders()) > 0) {
+      looping_inputs <- list()
+      for (slider in looping_sliders()) {
+        print(slider)
+        looping_inputs[[slider]] <- input[[slider]]
+        print("this is OK!!!")
+      }
+      c(list(input$simulate_id, input$tab_model_params), looping_inputs)
+    } else {
+      list(input$simulate_id, input$tab_model_params)
+    }
+    print("INSIDE CURRENT STATE2")
+    print(length(looping_sliders()))
+    print(typeof(c(looping_sliders())))
+  })
+
+  time_frame_changed <- reactiveVal(FALSE)
+
+  observeEvent(input$timeframe_id, {
+    # Convert model parameter values to corresponding timeframe value
+    if (time_frame_changed()) {
+    
+      for (param_id in model_specific_param_ids()) {
+        # freezeReactiveValue(input, param_id)
+        if (input$timeframe_id == "days") {
+          # convert yearly value ---> daily value
+          print("==================")
+          print(input[[param_id]])
+          new_value <- input[[param_id]] / 365
+          updateNumericInput(inputId = param_id, value = new_value, label="per day")
+        } else if (input$timeframe_id == "years") {
+          # convert daily value ---> yearly value
+          new_value <- input[[param_id]] * 365
+          updateNumericInput(inputId = param_id, value = new_value, label="per year")
+        }
+      }
+      
+    }
+    time_frame_changed(TRUE)
+  })
+
+
+  # When model choice or timeframe choice changes:
+  observeEvent(c(input$model_id, input$timeframe_id), {
+    req(input$model_id, input$timeframe_id)
+
+    # (1.) Reveal the corresponding hidden tabs
+    updateTabsetPanel(inputId = "tab_model_params", selected = input$model_id)
+    updateTabsetPanel(inputId = "time_params", selected = input$timeframe_id)
+
+    # (2.) Pause all looping sliders
+    session$sendCustomMessage(type = "pauseSliders", message = as.list(looping_sliders()))
+  })
+
+  # model_specific_param_ids <- get_specific_inputs("model", input)
+  model_specific_param_ids <- reactive({
+    all_inputs_names <- names(input)
+    grep("^model(?!.*_id$)", all_inputs_names, value = TRUE, perl = TRUE)
+
+    # all_inputs_names[grep("^model", all_inputs_names)]
+    # print("*************")
+    # print(all_inputs_names[grep("^model", all_inputs_names)])
+  })
+
+  # observeEvent(input$timeframe_id, {
+  #   updateTabsetPanel(inputId = "time_params", selected = input$timeframe_id)
+  # })
+
+  observe({
+    print(paste("Currently selected tabPanel within time_params:", input$time_params))
+    print(paste("Currently selected tabPanel within tab_model_params:", input$tab_model_params))
+  })
+
 
   # PRINT SELECTED MODEL
   output$modelPath_id <- renderPrint({
     model_path()
   })
 
-
-  # DYNAMICALLY ADD INPUT WIDGETS TO UI BASED ON MODEL SELECTED
-  output$model_additional_input <- renderUI({
-    req(input$model_id)
-    model_params <- model_path_env()$parameters
-    inputs <- list()
-    for (param in names(model_params)) {
-      inputs[[param]] <- model_params[[param]] # call each input
-    }
-    do.call(tagList, inputs) # render all the input
-  })
-
-
-  # DYNAMICALLY ADD INPUT WIDGETS INTO UI BASED ON TIME UNIT
-  output$time_additional_input <- renderUI({
-    if (input$time_unit_id == "days") {
-      numericInput("days_id", "Select number of days:",
-        min = 0, max = 1095, value = 100
-      )
-    } else {
-      numericInput("years_id", "Select number of years:",
-        min = 0, max = 30, value = 10
-      )
-    }
-  })
-
-  # output$days <- renderPrint({
-  #   input$days_id[[1]]
-  # })
-
-  # COMPUTE MODEL & SAVE OUTPUT IN DATAFRAMES: Consume the defined reactive dependencies
+  # COMPUTE MODEL & SAVE OUTPUT IN DATAFRAMES:====
+  # Consume the defined reactive dependencies
   model_output_dfs <- eventReactive(current_state(), {
     model_path_env()$modelOutput(input)
   })
 
-  # Remind users to select a model
+  # Remind users to select a model====
   observeEvent(input$simulate_id, {
     if (!isTruthy(input$model_id)) {
-      shinyalert("Select a Model", "Hi!👋 Please select a model from the list", type = "info")
+      shinyalert("Select a Model", "Hi! Please select a model🔢 from the list", type = "info")
+      return(NULL)
+    }
+    if (!isTruthy(input$timeframe_id)) {
+      shinyalert("Select a Timeframe", "Hi! Please select a Timeframe⏳ from the list", type = "info")
     }
   })
 

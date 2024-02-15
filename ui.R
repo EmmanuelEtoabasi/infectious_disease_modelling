@@ -1,8 +1,9 @@
 source("global.R")
 
 ui <- fluidPage(
-  # use_waiter(),
   
+  pause_sliders(),
+
   # Application title
   titlePanel("Infectious Disease Modelling"),
   sidebarLayout(
@@ -10,19 +11,23 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput("model_id",
         label = h3("Select Model:"),
-        choices = list_of_models, # "Choice 2" = 2, "Choice 3" = 3),
-        # selected = "sirv_c",
-        selected = " ",
+        choices = list_of_models,
+        # selected = " ",
         multiple = FALSE
       ),
-      uiOutput("model_additional_input"),
-      selectInput("time_unit_id",
-        label = h4("Time unit:"),
-        choices = c("Days" = "days", "Years" = "years"),
-        selected = "days",
-        multiple = FALSE
+      selectInput("timeframe_id",
+                  label = h4("Time unit:"),
+                  choices = c("Days" = "days", "Years" = "years"),
+                  # selected = "days",
+                  multiple = FALSE
       ),
-      uiOutput("time_additional_input"),
+
+      # ADD MODEL INPUT
+      simlutation_timeframe_tabs,
+      model_parameters_tabs,
+      
+      # simlutation_timeframe_tabs,
+      # uiOutput("time_additional_input"),
       verbatimTextOutput("days"),
       actionButton("simulate_id", "Simulate!", icon("refresh")),
       # submitButton("Generate Model", icon("refresh")),
