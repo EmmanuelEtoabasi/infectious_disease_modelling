@@ -24,16 +24,7 @@ server <- function(input, output, session) {
     all_inputs_names[grep("^loop", all_inputs_names)]
   })
 
-  # <- reactive({
-  #   all_inputs <- names(input)
-  #   # get looping sliders if present
-  #   loopers <- all_inputs[grep("^loop", all_inputs)]
-  #   return(loopers)
-  # })
-
-
-  # Define sources of reactive dependencies
-  # ie ==> input$simulate, input$tab_model_params,and input$loop_* if exist
+  
   current_state <- reactive({
     if (length(looping_sliders()) > 0) {
       looping_inputs <- list()
@@ -94,14 +85,9 @@ server <- function(input, output, session) {
     all_inputs_names <- names(input)
     grep("^model(?!.*_id$)", all_inputs_names, value = TRUE, perl = TRUE)
 
-    # all_inputs_names[grep("^model", all_inputs_names)]
-    # print("*************")
-    # print(all_inputs_names[grep("^model", all_inputs_names)])
+ 
   })
 
-  # observeEvent(input$timeframe_id, {
-  #   updateTabsetPanel(inputId = "time_params", selected = input$timeframe_id)
-  # })
 
   observe({
     print(paste("Currently selected tabPanel within time_params:", input$time_params))
