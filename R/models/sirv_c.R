@@ -61,7 +61,7 @@ modelOutput <- function(uiInputParameters) {
   # model_notify("Checking inputs...")
   req(
     uiInputParameters$pop_demo,
-    uiInputParameters$loop_p_vacc_demo,
+    uiInputParameters$loop_p_vacc_sirv_c,
     uiInputParameters$model_beta,
     uiInputParameters$model_gamma,
     uiInputParameters$time_params # the currently selected timeframe
@@ -94,7 +94,7 @@ modelOutput <- function(uiInputParameters) {
 
   # DEMOGRAPHIC VALUES:
   pop <- uiInputParameters$pop_demo
-  p_vacc <- uiInputParameters$loop_p_vacc_demo
+  p_vacc <- uiInputParameters$loop_p_vacc_sirv_c
 
   # MODEL VALUES:
   beta <- uiInputParameters$model_beta # the infection rate, which acts on susceptibles per year

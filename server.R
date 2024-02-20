@@ -52,8 +52,8 @@ server <- function(input, output, session) {
         # freezeReactiveValue(input, param_id)
         if (input$timeframe_id == "days") {
           # convert yearly value ---> daily value
-          print("==================")
-          print(input[[param_id]])
+          # print("==================")
+          # print(input[[param_id]])
           new_value <- input[[param_id]] / 365
           updateNumericInput(inputId = param_id, value = new_value, label="per day")
         } else if (input$timeframe_id == "years") {

@@ -95,7 +95,7 @@ model_parameters_tabs <- tabsetPanel(
       value = 500000, min = 0, max = NA, step = 1
     ),
     sliderInput(
-      inputId = "loop_p_vacc_demo",
+      inputId = "loop_p_vacc_sirv_c",
       label = "Proportion Vaccinated:",
       value = 0.0,
       min = 0,
@@ -138,7 +138,7 @@ model_parameters_tabs <- tabsetPanel(
       step = 1
     ),
     sliderInput(
-      inputId = "loop_p_vacc_new_demo",
+      inputId = "loop_p_vacc_sirv_v",
       label = "Proportion Vaccinated**:",
       value = 0.0,
       min = 0,
