@@ -8,21 +8,21 @@ server <- function(input, output, session) {
     # input$tab_model_params is the currently selected or active model from the list of models
     req(input$tab_model_params)
     path_to_specific_model(input$tab_model_params)
-  })
+  }, label = "model_path")
 
   # Create model path environment: This will prevent global namespace overloading
   model_path_env <- reactive({
     env <- new.env()
     sys.source(model_path(), envir = env)
     env
-  })
+  }, label = "model_path_env")
 
   # Get looping sliderInput IDs. It is a reactive object
   # looping_sliders <- get_specific_inputs("loop")
   looping_sliders <- reactive({
     all_inputs_names <- names(input)
     all_inputs_names[grep("^loop", all_inputs_names)]
-  })
+  }, label = "looping_sliders")
 
   
   current_state <- reactive({
@@ -40,7 +40,7 @@ server <- function(input, output, session) {
     print("INSIDE CURRENT STATE2")
     print(length(looping_sliders()))
     print(typeof(c(looping_sliders())))
-  })
+  }, label = "current_state")
 
   time_frame_changed <- reactiveVal(FALSE)
 
@@ -65,7 +65,7 @@ server <- function(input, output, session) {
       
     }
     time_frame_changed(TRUE)
-  })
+  }, label = "obsE_timeframe")
 
 
   # When model choice or timeframe choice changes:
@@ -78,21 +78,19 @@ server <- function(input, output, session) {
 
     # (2.) Pause all looping sliders
     session$sendCustomMessage(type = "pauseSliders", message = as.list(looping_sliders()))
-  })
+  }, label="obsE_timeframe_model")
 
   # model_specific_param_ids <- get_specific_inputs("model", input)
   model_specific_param_ids <- reactive({
     all_inputs_names <- names(input)
     grep("^model(?!.*_id$)", all_inputs_names, value = TRUE, perl = TRUE)
-
- 
-  })
+  }, label="model_specific_param_ids")
 
 
   observe({
     print(paste("Currently selected tabPanel within time_params:", input$time_params))
     print(paste("Currently selected tabPanel within tab_model_params:", input$tab_model_params))
-  })
+  }, label="obs_print")
 
 
   # PRINT SELECTED MODEL
@@ -104,7 +102,7 @@ server <- function(input, output, session) {
   # Consume the defined reactive dependencies
   model_output_dfs <- eventReactive(current_state(), {
     model_path_env()$modelOutput(input)
-  })
+  }, label="model_output_dfs")
 
   # Remind users to select a model====
   observeEvent(input$simulate_id, {
@@ -115,7 +113,7 @@ server <- function(input, output, session) {
     if (!isTruthy(input$timeframe_id)) {
       shinyalert("Select a Timeframe", "Hi! Please select a Timeframe⏳ from the list", type = "info")
     }
-  })
+  }, label="obsE_simulateiId_alert")
 
   # RENDER COMBINED PLOTS
   output$modelPlot1 <- renderPlotly({
