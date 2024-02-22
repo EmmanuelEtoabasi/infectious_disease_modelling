@@ -3,38 +3,24 @@ source("global.R")
 ui <- fluidPage(
   
   pause_sliders(),
+  # model_head_UI("tab_model_params"),
 
   # Application title
   titlePanel("Infectious Disease Modelling"),
   sidebarLayout(
     # SIDEBAR
     sidebarPanel(
-      selectInput("model_id",
-        label = h3("Select Model:"),
-        choices = list_of_models,
-        # selected = " ",
-        multiple = FALSE
-      ),
-      selectInput("timeframe_id",
-                  label = h4("Time unit:"),
-                  choices = c("Days" = "days", "Years" = "years"),
-                  # selected = "days",
-                  multiple = FALSE
-      ),
-
+      model_select_UI("tab_model_params"),
       # ADD MODEL INPUT
       simlutation_timeframe_tabs,
-      model_parameters_tabs,
+      model_input_UI("tab_model_params"),
+      # model_parameters_tabs,
       
       # simlutation_timeframe_tabs,
       # uiOutput("time_additional_input"),
       verbatimTextOutput("days"),
-      actionButton("simulate_id", "Simulate!", icon("refresh")),
-      # submitButton("Generate Model", icon("refresh")),
-      helpText(
-        "Click the button to simulate at fixed p_vacc",
-        "Or click play above to animate plots at looping p_vacc"
-      )
+      
+      simulate_UI("simulate")
     ),
     # MAINPANEL
     mainPanel(

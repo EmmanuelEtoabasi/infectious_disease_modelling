@@ -9,6 +9,8 @@ for (package in
   library(package, character.only = T)
 }
 
+source("R/models_module.R")
+
 # list of models
 list_of_models <- c(
   "Please choose a model" = "",
@@ -20,11 +22,26 @@ list_of_models <- c(
 # To run in the server file
 # It will take ui inputs to determine path to the specific model
 
-path_to_specific_model <- function(selected_model) {
-  model_path <- here::here("R/models", paste(selected_model, ".R", sep = ""))
-
-  return(model_path)
+get_all_play_loops <- function(id, input){
+  looping_inputs_list <- list()
+  all_inputs_names <- names(input)
+  looping_inputs_names <- all_inputs_names[grep("^loop", all_inputs_names)]
+  if (length(looping_inputs_names) > 0) {
+    for (slider in looping_inputs_names) {
+      looping_inputs_list[[slider]] <- input[[slider]]
+    }
+    looping_inputs_names <- paste0(id, "-", looping_inputs_names)
+  }
+  list(names=looping_inputs_names, inputs_l=looping_inputs_list)
 }
+
+specific_model_env <- function(selected_model) {
+  model_path <- here::here("R/models", paste(selected_model, ".R", sep = ""))
+  env <- new.env()
+  sys.source(model_path, envir = env)
+  return(env)
+}
+# specific_model_env("sirv_c")$inputTabPanel
 
 
 all_plot <- function(output_long) {
@@ -84,81 +101,11 @@ simlutation_timeframe_tabs <- tabsetPanel(
   )
 )
 
-model_parameters_tabs <- tabsetPanel(
-  id = "tab_model_params",
-  type = "hidden",
-  tabPanel(""), # : to prevent default exposure of the first tab
-  tabPanel(
-    "sirv_c",
-    numericInput(
-      inputId = "pop_demo", label = "Population:",
-      value = 500000, min = 0, max = NA, step = 1
-    ),
-    sliderInput(
-      inputId = "loop_p_vacc_sirv_c",
-      label = "Proportion Vaccinated:",
-      value = 0.0,
-      min = 0,
-      max = 1,
-      step = 0.05,
-      animate = animationOptions(
-        interval = 1500,
-        loop = TRUE
-      )
-    ),
-    hr(),
-    h4("Infection rate (β)"),
-    numericInput(
-      inputId = "model_beta",
-      label = "per day",
-      value = 2.5,
-      min = 0,
-      max = NA,
-      step = 0.01
-    ),
-    hr(),
-    h4(" Recovery rate (γ))"),
-    numericInput(
-      inputId = "model_gamma",
-      label = "per day",
-      value = 0.8,
-      min = 0,
-      max = NA,
-      step = 0.01
-    )
-  ),
-  tabPanel(
-    "sirv_v",
-    numericInput(
-      inputId = "pop_new_demo",
-      label = "Population:",
-      value = 500000,
-      min = 0,
-      max = NA,
-      step = 1
-    ),
-    sliderInput(
-      inputId = "loop_p_vacc_sirv_v",
-      label = "Proportion Vaccinated**:",
-      value = 0.0,
-      min = 0,
-      max = 1,
-      step = 0.05,
-      animate = animationOptions(
-        interval = 1500,
-        loop = TRUE
-      )
-    )
-  )
-)
-
-
-
 
 pause_sliders <- function() {
   tags$head(tags$script(HTML("
-    Shiny.addCustomMessageHandler('pauseSliders', function(looping_sliders) {
-      looping_sliders.forEach(function(sliderId) {
+    Shiny.addCustomMessageHandler('pauseSliders', function(play_loops) {
+      play_loops.forEach(function(sliderId) {
         var $animateButton = $('#' + sliderId + ' + .slider-animate-container .slider-animate-button');
         if ($animateButton.hasClass('playing')) {
           $animateButton.click();

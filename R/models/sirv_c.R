@@ -14,46 +14,47 @@ vaccination <- function(output) {
 # ========================================================================== #
 #                      DEFINE PARAMETERS
 # ========================================================================== #
-parameters <- list(
-  demo_pop = numericInput(
-    inputId = "demo_pop",
-    label = "Population:",
-    value = 500000,
-    min = 0,
-    max = NA,
-    step = 1
-  ),
-  demo_p_vacc_loop = sliderInput(
-    inputId = "demo_p_vacc_loop",
-    label = "Proportion Vaccinated:",
-    value = 0.0,
-    min = 0,
-    max = 1,
-    step = 0.05,
-    animate = animationOptions(
-      interval = 1500,
-      loop = TRUE
+inputTabPanel <- function(id) {
+  tabPanel(
+    "sirv_c",
+    numericInput(
+      inputId = "pop_demo", label = "Population:",
+      value = 500000, min = 0, max = NA, step = 1
+    ),
+    sliderInput(
+      inputId = NS(id, "loop_p_vacc_sirv_c"),
+      label = "Proportion Vaccinated:",
+      value = 0.0,
+      min = 0,
+      max = 1,
+      step = 0.05,
+      animate = animationOptions(
+        interval = 1500,
+        loop = TRUE
+      )
+    ),
+    hr(),
+    h4("Infection rate (β)"),
+    numericInput(
+      inputId = NS(id, "model_beta"),
+      label = "per day",
+      value = 2.5,
+      min = 0,
+      max = NA,
+      step = 0.01
+    ),
+    hr(),
+    h4(" Recovery rate (γ))"),
+    numericInput(
+      inputId = NS(id, "model_gamma"),
+      label = "per day",
+      value = 0.8,
+      min = 0,
+      max = NA,
+      step = 0.01
     )
-  ),
-  model_beta = numericInput(
-    inputId = "model_beta",
-    label = "Infection rate/unit time (β):",
-    value = 2.5,
-    min = 0,
-    max = NA,
-    step = 0.01
-  ),
-  model_gamma = numericInput(
-    inputId = "model_gamma",
-    label = "Rate of recovery/unit time (γ):",
-    value = 0.8,
-    min = 0,
-    max = NA,
-    step = 0.01
   )
-)
-
-
+}
 # ========================================================================== #
 #                      DEFINE MODEL OUTPUT FUNCTION
 # ========================================================================== #
@@ -66,7 +67,7 @@ modelOutput <- function(uiInputParameters) {
     uiInputParameters$model_gamma,
     uiInputParameters$time_params # the currently selected timeframe
   )
-  
+
   # model_notify("Define model...")
   # THE MODEL
   model_SIRVc <- function(time, state, parameters) {
@@ -118,7 +119,7 @@ modelOutput <- function(uiInputParameters) {
     "days" = seq(from = 0, to = uiInputParameters$input_days[[1]], by = 1),
     "years" = seq(from = 0, to = uiInputParameters$input_years[[1]], by = 10 / 365)
   )
-  
+
   # model_notify("Solving differential equations...")
   # MODEL OUTPUTS (solving the differential equations using the ode integration algorithm):
   output <- as.data.frame(ode(
@@ -139,9 +140,7 @@ modelOutput <- function(uiInputParameters) {
 ################# Resume here: To convert model params
 modelParams <- c("model_gamma", "model_beta")
 
-convertModelparams <- function(uiInputParameters){
+convertModelparams <- function(uiInputParameters) {
   s$timeframe_id
-  req(paste(uiInputParameters, modelParams, sep='$'))
+  req(paste(uiInputParameters, modelParams, sep = "$"))
 }
-
-
