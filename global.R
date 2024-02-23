@@ -23,16 +23,18 @@ list_of_models <- c(
 # It will take ui inputs to determine path to the specific model
 
 get_all_play_loops <- function(id, input){
-  looping_inputs_list <- list()
-  all_inputs_names <- names(input)
-  looping_inputs_names <- all_inputs_names[grep("^loop", all_inputs_names)]
-  if (length(looping_inputs_names) > 0) {
-    for (slider in looping_inputs_names) {
-      looping_inputs_list[[slider]] <- input[[slider]]
+  looping_inputs_values <- list()
+  all_inputs_ids <- names(input)
+  looping_inputs_ids <- all_inputs_ids[grep("^loop", all_inputs_ids)]
+  if (length(looping_inputs_ids) > 0) {
+    for (slider in looping_inputs_ids) {
+      looping_inputs_values[[slider]] <- input[[slider]]
     }
-    looping_inputs_names <- paste0(id, "-", looping_inputs_names)
+    looping_inputs_ids <- paste0(id, "-", looping_inputs_ids)
   }
-  list(names=looping_inputs_names, inputs_l=looping_inputs_list)
+  list(looping_slider_ids = looping_inputs_ids, 
+       looping_slider_values = looping_inputs_values
+       )
 }
 
 specific_model_env <- function(selected_model) {
@@ -104,8 +106,8 @@ simlutation_timeframe_tabs <- tabsetPanel(
 
 pause_sliders <- function() {
   tags$head(tags$script(HTML("
-    Shiny.addCustomMessageHandler('pauseSliders', function(play_loops) {
-      play_loops.forEach(function(sliderId) {
+    Shiny.addCustomMessageHandler('pauseSliders', function(play_loops_ids) {
+      play_loops_ids.forEach(function(sliderId) {
         var $animateButton = $('#' + sliderId + ' + .slider-animate-container .slider-animate-button');
         if ($animateButton.hasClass('playing')) {
           $animateButton.click();

@@ -18,7 +18,7 @@ inputTabPanel <- function(id) {
   tabPanel(
     "sirv_c",
     numericInput(
-      inputId = "pop_demo", label = "Population:",
+      inputId = NS(id, "pop_demo_sirv_c"), label = "Population:",
       value = 500000, min = 0, max = NA, step = 1
     ),
     sliderInput(
@@ -36,7 +36,7 @@ inputTabPanel <- function(id) {
     hr(),
     h4("Infection rate (β)"),
     numericInput(
-      inputId = NS(id, "model_beta"),
+      inputId = NS(id, "model_beta_sirv_c"),
       label = "per day",
       value = 2.5,
       min = 0,
@@ -46,7 +46,7 @@ inputTabPanel <- function(id) {
     hr(),
     h4(" Recovery rate (γ))"),
     numericInput(
-      inputId = NS(id, "model_gamma"),
+      inputId = NS(id, "model_gamma_sirv_c"),
       label = "per day",
       value = 0.8,
       min = 0,
@@ -61,11 +61,11 @@ inputTabPanel <- function(id) {
 modelOutput <- function(uiInputParameters) {
   # model_notify("Checking inputs...")
   req(
-    uiInputParameters$pop_demo,
+    uiInputParameters$pop_demo_sirv_c,
     uiInputParameters$loop_p_vacc_sirv_c,
-    uiInputParameters$model_beta,
-    uiInputParameters$model_gamma,
-    uiInputParameters$time_params # the currently selected timeframe
+    uiInputParameters$model_beta_sirv_c,
+    uiInputParameters$model_gamma_sirv_c,
+    uiInputParameters$timeframe_id # the currently selected timeframe
   )
 
   # model_notify("Define model...")
@@ -94,12 +94,12 @@ modelOutput <- function(uiInputParameters) {
   # OBTAIN PARAMETERS FROM INPUT WIDGETS
 
   # DEMOGRAPHIC VALUES:
-  pop <- uiInputParameters$pop_demo
+  pop <- uiInputParameters$pop_demo_sirv_c
   p_vacc <- uiInputParameters$loop_p_vacc_sirv_c
 
   # MODEL VALUES:
-  beta <- uiInputParameters$model_beta # the infection rate, which acts on susceptibles per year
-  gamma <- uiInputParameters$model_gamma
+  beta <- uiInputParameters$model_beta_sirv_c # the infection rate, which acts on susceptibles per year
+  gamma <- uiInputParameters$model_gamma_sirv_c
 
   # MODEL PARAMS
   modelParams <- c(beta = beta, gamma = gamma)
@@ -114,7 +114,7 @@ modelOutput <- function(uiInputParameters) {
   )
 
   # TIMESTEPS
-  timeframe <- uiInputParameters$time_params
+  timeframe <- uiInputParameters$timeframe_id
   times <- switch(timeframe,
     "days" = seq(from = 0, to = uiInputParameters$input_days[[1]], by = 1),
     "years" = seq(from = 0, to = uiInputParameters$input_years[[1]], by = 10 / 365)
@@ -138,7 +138,7 @@ modelOutput <- function(uiInputParameters) {
 
 
 ################# Resume here: To convert model params
-modelParams <- c("model_gamma", "model_beta")
+modelParams <- c("model_gamma_sirv_c", "model_beta_sirv_c")
 
 convertModelparams <- function(uiInputParameters) {
   s$timeframe_id

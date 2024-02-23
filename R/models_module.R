@@ -26,6 +26,28 @@ model_input_UI <- function(id) {
   )
 }
 
+model_duration_input_UI <- function(id){
+  tabsetPanel(
+    id = NS(id, "duration_id"),
+    type = "hidden",
+    tabPanel(""), # to ensure no default exposure of the first tab
+    tabPanel(
+      "days",
+      numericInput(
+        inputId = NS(id, "input_days"), label = "Select number of days:",
+        min = 0, max = 1095, value = 100
+      )
+    ),
+    tabPanel(
+      "years",
+      numericInput(
+        inputId = NS(id, "input_years"), label = "Select number of years:",
+        min = 0, max = 30, value = 10
+      )
+    )
+  )
+}
+
 simulate_UI <- function(id) {
   tagList(
     actionButton(NS(id, "simulate_id"), "Simulate!", icon("refresh")),
@@ -39,16 +61,13 @@ simulate_UI <- function(id) {
 
 simulate_Server <- function(id, model_id_react) {
   moduleServer(id, function(input, output, session) {
-    # Remind users to select a model====
-    observeEvent(input$simulate_id,
-      {
+    eventReactive(input$simulate_id,
+      { # Remind users to select a model
         if (!isTruthy(model_id_react())) {
           shinyalert("Select a Model", "Hi! Please select a model🔢 from the list", type = "info")
-          return(NULL)
         }
-        # if (!isTruthy(timeframe_id_react)) {
-        #   shinyalert("Select a Timeframe", "Hi! Please select a Timeframe⏳ from the list", type = "info")
-        # }
+        req(model_id_react(), cancelOutput = TRUE)
+        input$simulate_id
       },
       label = "obsE_simulateiId_alert"
     )
@@ -57,6 +76,7 @@ simulate_Server <- function(id, model_id_react) {
 
 model_Server <- function(id) {
   moduleServer(id, function(input, output, session) {
+   
     # Create model path environment:
     # This will prevent global namespace overloading
     model_env <- reactive(
@@ -68,22 +88,20 @@ model_Server <- function(id) {
     )
 
     # Get looping sliderInput IDs. It is a reactive object
-    all_play_loops <- reactive(get_all_play_loops(id, input)$names)
+    all_play_loops <- reactive(get_all_play_loops(id, input))
+    looping_slider_ids <- reactive(all_play_loops()$looping_slider_ids)
+    looping_slider_values <- reactive(all_play_loops()$looping_slider_values)
     model_timeframe_ids <- reactive(c(input$model_id, input$timeframe_id))
 
-    # When model choice or timeframe choice changes:
-    observeEvent(model_timeframe_ids(),
+    # When model or timeframe choice changes:
+    observeEvent(c(input$model_id, input$timeframe_id),
       {
-        # (1.) Reveal the corresponding hidden tabs
-        updateTabsetPanel(session,
-          inputId = "tabsetpanel_id",
-          selected = input$model_id
-        )
-
-        # ************************** move out into its module
-        # updateTabsetPanel(session, inputId = "time_params", selected = selected_timeframe())
+        req(input$model_id)
+        # Reveal the corresponding hidden tabs
+        updateTabsetPanel(session, inputId = "tabsetpanel_id", selected = input$model_id)
+        updateTabsetPanel(session, inputId = "duration_id", selected = input$timeframe_id)
       },
-      label = "obsE_timeframe_model"
+      label = "obs_timeframe_model"
     )
 
 
@@ -91,8 +109,8 @@ model_Server <- function(id) {
     # 1.) Get all model param values
     model_specific_param_ids <- reactive(
       {
-        all_inputs_names <- names(input)
-        grep("^model(?!.*_id$)", all_inputs_names, value = TRUE, perl = TRUE)
+        all_inputs_id <- names(input)
+        grep("^model(?!.*_id$)", all_inputs_id, value = TRUE, perl = TRUE)
       },
       label = "model_specific_param_ids"
     )
@@ -122,11 +140,12 @@ model_Server <- function(id) {
     )
     # ....
     list(
+      inputs = input,
       model_path_env = model_env,
-      play_loops = all_play_loops,
+      play_loops_ids = looping_slider_ids,
+      play_loops_values = looping_slider_values,
       pauseLoop_params = model_timeframe_ids,
       model_id_react = reactive(input$model_id)
-      # selected_model = reactive(input$tabsetpanel_id)
     )
   })
 }
